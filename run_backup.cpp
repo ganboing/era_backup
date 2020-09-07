@@ -57,13 +57,13 @@ static std::pair<uint64_t, uint64_t> parse_era_entry(rapidxml::xml_node<> *node)
 {
 	using namespace std::literals;
 	std::string_view type = node->name();
-	if (type == "block" sv) {
+	if (type == "block"sv) {
 		auto b = node->first_attribute("block");
 		if (!b)
 			error(2, 0, "invalid era format: malformed block");
 		uint64_t bn = strtoull(b->value(), nullptr, 10);
 		return std::make_pair(bn, bn + 1);
-	} else if (type == "range" sv) {
+	} else if (type == "range"sv) {
 		auto l = node->first_attribute("begin");
 		auto r = node->first_attribute("end");
 		if (!l || !r) {
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 	std::string_view format_sv = format;
 
 	std::function<uint64_t(void)> idx_pool;
-	if (format_sv == "era" sv) {
+	if (format_sv == "era"sv) {
 		std::cin >> std::noskipws;
 		std::istream_iterator<char> it(std::cin);
 		std::istream_iterator<char> end;
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 			}
 			return l++;
 		};
-	} else if (format_sv == "plain" sv) {
+	} else if (format_sv == "plain"sv) {
 		idx_pool = []() {
 			uint64_t block;
 			if (std::cin >> block)
