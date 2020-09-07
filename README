@@ -15,6 +15,8 @@ Usage:
         -r, --rlimit   Limit the number of concurrent read channels
         -w, --wlimit   Limit the number of concurrent write channels
 
+Logging:
+        DEBUG_AIO=<n>
 
 Example 1:
 
