@@ -28,14 +28,12 @@ static unsigned long get_sz(int fd)
 	return ret;
 }
 
-static option long_opts[] = { { "help", no_argument, nullptr, 'h' },
-			      { "format", required_argument, nullptr, 'm' },
-			      { "dry", no_argument, nullptr, 'd' },
-			      { "channel", required_argument, nullptr, 'c' },
-			      { "restart", required_argument, nullptr, 's' },
-			      { "rlimit", required_argument, nullptr, 'r' },
-			      { "wlimit", required_argument, nullptr, 'w' },
-			      { nullptr, 0, nullptr, 0 } };
+static option long_opts[] = {
+	{ "help", no_argument, nullptr, 'h' },		{ "format", required_argument, nullptr, 'm' },
+	{ "dry", no_argument, nullptr, 'd' },		{ "channel", required_argument, nullptr, 'c' },
+	{ "restart", required_argument, nullptr, 's' }, { "rlimit", required_argument, nullptr, 'r' },
+	{ "wlimit", required_argument, nullptr, 'w' },	{ nullptr, 0, nullptr, 0 }
+};
 
 static void help(const char *argv0)
 {
@@ -57,13 +55,13 @@ static std::pair<uint64_t, uint64_t> parse_era_entry(rapidxml::xml_node<> *node)
 {
 	using namespace std::literals;
 	std::string_view type = node->name();
-	if (type == "block"sv) {
+	if (type == "block" sv) {
 		auto b = node->first_attribute("block");
 		if (!b)
 			error(2, 0, "invalid era format: malformed block");
 		uint64_t bn = strtoull(b->value(), nullptr, 10);
 		return std::make_pair(bn, bn + 1);
-	} else if (type == "range"sv) {
+	} else if (type == "range" sv) {
 		auto l = node->first_attribute("begin");
 		auto r = node->first_attribute("end");
 		if (!l || !r) {
@@ -75,8 +73,7 @@ static std::pair<uint64_t, uint64_t> parse_era_entry(rapidxml::xml_node<> *node)
 			error(2, 0, "invalid era format: begin > end");
 		return std::make_pair(ln, rn);
 	} else
-		error(2, 0, "invalid era format: encountered node: %s",
-		      node->name());
+		error(2, 0, "invalid era format: encountered node: %s", node->name());
 	__builtin_unreachable();
 }
 
@@ -90,8 +87,7 @@ int main(int argc, char **argv)
 	unsigned limit_r = 0, limit_w = 0;
 	uint64_t restart = UINT64_MAX;
 	bool dry = false;
-	while ((c = getopt_long(argc, argv, "hdm:c:s:r:w:", long_opts,
-				&opt_idx)) != -1) {
+	while ((c = getopt_long(argc, argv, "hdm:c:s:r:w:", long_opts, &opt_idx)) != -1) {
 		switch (c) {
 		case 'h':
 			help(argv[0]);
@@ -126,7 +122,7 @@ int main(int argc, char **argv)
 	std::string_view format_sv = format;
 
 	std::function<uint64_t(void)> idx_pool;
-	if (format_sv == "era"sv) {
+	if (format_sv == "era" sv) {
 		std::cin >> std::noskipws;
 		std::istream_iterator<char> it(std::cin);
 		std::istream_iterator<char> end;
@@ -135,8 +131,7 @@ int main(int argc, char **argv)
 		doc->parse<0>(&strf->front());
 		auto *blocks = doc->first_node("blocks");
 		if (!blocks)
-			error(2, 0,
-			      "unable to find blocks section in era dump");
+			error(2, 0, "unable to find blocks section in era dump");
 		auto *node = blocks->first_node();
 		uint64_t l = 0, r = 0;
 		if (node) {
@@ -158,7 +153,7 @@ int main(int argc, char **argv)
 			}
 			return l++;
 		};
-	} else if (format_sv == "plain"sv) {
+	} else if (format_sv == "plain" sv) {
 		idx_pool = []() {
 			uint64_t block;
 			if (std::cin >> block)
@@ -185,19 +180,16 @@ int main(int argc, char **argv)
 	char **opts = argv + optind;
 	ManagedFd fd_in = open(opts[0], O_RDONLY | O_DIRECT);
 	if (fd_in.fd < 0)
-		error(1, errno, "open(%s, O_RDONLY | O_DIRECT) failed",
-		      opts[0]);
+		error(1, errno, "open(%s, O_RDONLY | O_DIRECT) failed", opts[0]);
 	ManagedFd fd_out = open(opts[1], O_WRONLY | O_DIRECT);
 	if (fd_out.fd < 0)
-		error(1, errno, "open(%s, O_WRONLY | O_DIRECT) failed",
-		      opts[1]);
+		error(1, errno, "open(%s, O_WRONLY | O_DIRECT) failed", opts[1]);
 	if (get_sz(fd_in.fd) != get_sz(fd_out.fd))
 		error(2, 0, "Size does not match!");
 	uint64_t multiplier = strtoull(opts[2], nullptr, 10);
 	if (multiplier & (multiplier - 1))
 		error(2, 0, "multipler must be power of 2");
 
-	AioCopyManager aio(multiplier, channels, fd_in.fd, fd_out.fd, SIGRTMIN,
-			   SIGRTMIN + 1);
+	AioCopyManager aio(multiplier, channels, fd_in.fd, fd_out.fd, SIGRTMIN, SIGRTMIN + 1);
 	aio.runLoop(std::move(idx_pool), limit_r, limit_w);
 }

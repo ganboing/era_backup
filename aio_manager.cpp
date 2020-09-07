@@ -72,8 +72,7 @@ typedef std::unique_ptr<FILE, int (*)(FILE *)> ptr_FILE;
 
 static unsigned const DBG_LEVEL_AIO = debug_level("DEBUG_AIO");
 
-static void DBG_AIO(int level, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3)));
+static void DBG_AIO(int level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 static void DBG_AIO(int level, const char *fmt, ...)
 {
@@ -116,8 +115,7 @@ struct AioCopyManager {
 		struct aiocb iocb;
 
 		inline AioChannel(void *_buff, uint64_t _bsz)
-			: canceled(false), err(0), idx(UINT64_MAX),
-			  prev_idx(UINT64_MAX), buffer(_buff), blocksz(_bsz)
+			: canceled(false), err(0), idx(UINT64_MAX), prev_idx(UINT64_MAX), buffer(_buff), blocksz(_bsz)
 		{
 			memset(&iocb, 0, sizeof(iocb));
 			iocb.aio_buf = (volatile void *)buffer;
@@ -172,8 +170,7 @@ struct AioCopyManager {
 		void completion(int signo)
 		{
 			if (signo != iocb.aio_sigevent.sigev_signo)
-				error(1, 0,
-				      "aio completed but signo doesn't match");
+				error(1, 0, "aio completed but signo doesn't match");
 			assert(!err && !canceled);
 			int status = aio_error(&iocb);
 			if (status < 0)
@@ -187,9 +184,7 @@ struct AioCopyManager {
 				if (ret < 0)
 					err = errno;
 				else if ((uint64_t)ret != blocksz)
-					error(1, 0,
-					      "read/write doesn't give requested bytes (%" PRIi64
-					      "/%" PRIi64 ")",
+					error(1, 0, "read/write doesn't give requested bytes (%" PRIi64 "/%" PRIi64 ")",
 					      (uint64_t)ret, blocksz);
 			}
 		}
@@ -200,21 +195,17 @@ struct AioCopyManager {
 	std::map<uint64_t, std::unique_ptr<AioChannel> > channel_writing;
 	std::multimap<uint64_t, std::unique_ptr<AioChannel> > channel_free;
 
-	inline AioCopyManager(uint64_t _multi, unsigned _chan, int _fin,
-			      int _fout, int _sigr, int _sigw)
-		: multiplier(_multi), channel(_chan), fd_in(_fin),
-		  fd_out(_fout), sigr(_sigr), sigw(_sigw)
+	inline AioCopyManager(uint64_t _multi, unsigned _chan, int _fin, int _fout, int _sigr, int _sigw)
+		: multiplier(_multi), channel(_chan), fd_in(_fin), fd_out(_fout), sigr(_sigr), sigw(_sigw)
 	{
 		long pagesz = sysconf(_SC_PAGESIZE);
 		assert(pagesz > 0);
-		if (multiplier * MY_BLOCK_SIZE * channel <
-		    (unsigned long)pagesz)
+		if (multiplier * MY_BLOCK_SIZE * channel < (unsigned long)pagesz)
 			error(2, 0, "buffer too small");
 
 		std::set<int> sigs_abort = { SIGHUP, SIGTERM, SIGINT };
 		if (sigs_abort.count(sigr) || sigs_abort.count(sigw))
-			error(2, 0,
-			      "signo cannot collide with predefined system signals");
+			error(2, 0, "signo cannot collide with predefined system signals");
 		sigset_t mask;
 
 		sigemptyset(&mask);
@@ -229,20 +220,15 @@ struct AioCopyManager {
 		if ((sfd = signalfd(-1, &mask, SFD_CLOEXEC)) < 0)
 			error(1, errno, "signalfd failed");
 
-		if ((buffers = mmap(NULL, multiplier * MY_BLOCK_SIZE * channel,
-				    PROT_READ | PROT_WRITE,
-				    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)) ==
-		    MAP_FAILED) {
+		if ((buffers = mmap(NULL, multiplier * MY_BLOCK_SIZE * channel, PROT_READ | PROT_WRITE,
+				    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
 			error(1, errno, "mmap failed");
 		}
 		for (unsigned i = 0; i != channel; ++i) {
 			channel_free.emplace(
 				UINT64_MAX,
-				std::make_unique<AioChannel>(
-					(char *)buffers +
-						(uint64_t)i * MY_BLOCK_SIZE *
-							multiplier,
-					MY_BLOCK_SIZE * multiplier));
+				std::make_unique<AioChannel>((char *)buffers + (uint64_t)i * MY_BLOCK_SIZE * multiplier,
+							     MY_BLOCK_SIZE * multiplier));
 		}
 	}
 
@@ -254,15 +240,11 @@ struct AioCopyManager {
 
 	void complete_channel(AioChannel *chan)
 	{
-		DBG_AIO(2 - (chan->err || chan->canceled),
-			"Channel idx = %" PRIi64 " %s finished%s%s%s\n",
-			chan->idx, chan->writing ? "(write)" : "(read)",
-			chan->canceled ? ", CANCELLED" : "",
-			chan->err ? ", ERROR: " : "",
-			chan->err ? strerror(chan->err) : "");
+		DBG_AIO(2 - (chan->err || chan->canceled), "Channel idx = %" PRIi64 " %s finished%s%s%s\n", chan->idx,
+			chan->writing ? "(write)" : "(read)", chan->canceled ? ", CANCELLED" : "",
+			chan->err ? ", ERROR: " : "", chan->err ? strerror(chan->err) : "");
 		if (chan->err || chan->canceled) {
-			DBG_AIO(1, "Channel idx = %" PRIi64 " %s dropped\n",
-				chan->idx,
+			DBG_AIO(1, "Channel idx = %" PRIi64 " %s dropped\n", chan->idx,
 				chan->writing ? "(writing)" : "(reading)");
 		}
 		if (chan->writing) {
@@ -300,12 +282,10 @@ struct AioCopyManager {
 			return false;
 		}
 		if (fdsi.ssi_pid != (uint32_t)getpid()) {
-			error(0, 0, "signal ignored: sent by %" PRIi32,
-			      fdsi.ssi_pid);
+			error(0, 0, "signal ignored: sent by %" PRIi32, fdsi.ssi_pid);
 			return true;
 		}
-		DBG_AIO(2, "Signal %d: ssi_ptr = %p\n", fdsi.ssi_signo,
-			(void *)fdsi.ssi_ptr);
+		DBG_AIO(2, "Signal %d: ssi_ptr = %p\n", fdsi.ssi_signo, (void *)fdsi.ssi_ptr);
 		auto chan = (AioChannel *)fdsi.ssi_ptr;
 		chan->completion(fdsi.ssi_signo);
 		complete_channel(chan);
@@ -323,26 +303,20 @@ struct AioCopyManager {
 			DBG_AIO(2, "Cancelling all pending write\n");
 			aio_cancel(fd_out, NULL);
 		}
-		while (channel_free.size() + channel_readdone.size() !=
-		       channel) {
+		while (channel_free.size() + channel_readdone.size() != channel) {
 			checkSignal();
 		}
 		//drop done list
 		while (channel_readdone.size()) {
-			auto nh = channel_readdone.extract(
-				channel_readdone.begin());
-			DBG_AIO(1,
-				"Channel idx = %" PRIi64
-				" finished read, dropped\n",
-				nh.key());
+			auto nh = channel_readdone.extract(channel_readdone.begin());
+			DBG_AIO(1, "Channel idx = %" PRIi64 " finished read, dropped\n", nh.key());
 			nh.key() = UINT64_MAX;
 			channel_free.insert(std::move(nh));
 		}
 	}
 
-	std::pair<uint64_t, uint64_t>
-	runLoop(std::function<uint64_t(void)> &&idxpool,
-		unsigned read_limit = 0, unsigned write_limit = 0)
+	std::pair<uint64_t, uint64_t> runLoop(std::function<uint64_t(void)> &&idxpool, unsigned read_limit = 0,
+					      unsigned write_limit = 0)
 	{
 		assert(channel_free.size() == channel);
 		uint64_t prev_idx = UINT64_MAX;
@@ -359,44 +333,32 @@ struct AioCopyManager {
 		for (;;) {
 			bool work = false;
 			free_it = channel_free.begin();
-			if (free_it != channel_free.end() &&
-			    (!read_limit ||
-			     channel_reading.size() < read_limit)) {
+			if (free_it != channel_free.end() && (!read_limit || channel_reading.size() < read_limit)) {
 				//try add channel
 				uint64_t idx = idxpool();
 				if (idx != UINT64_MAX) {
-					DBG_AIO(2,
-						"Channel added, idx = %" PRIi64
-						", count = %" PRIi64 "\n",
-						idx, count);
-					auto nh =
-						channel_free.extract(free_it++);
+					DBG_AIO(2, "Channel added, idx = %" PRIi64 ", count = %" PRIi64 "\n", idx,
+						count);
+					auto nh = channel_free.extract(free_it++);
 					assert(nh.key() == nh.mapped()->idx);
 					assert(nh.key() != idx);
 					count += nh.key() != UINT64_MAX;
 					nh.key() = nh.mapped()->idx = idx;
 					nh.mapped()->prev_idx = prev_idx;
-					auto ret = channel_reading.insert(
-						std::move(nh));
+					auto ret = channel_reading.insert(std::move(nh));
 					assert(ret.inserted);
-					ret.position->second->prep_read(fd_in,
-									sigr);
+					ret.position->second->prep_read(fd_in, sigr);
 					work = true;
 				}
 				prev_idx = idx;
 			}
 			auto done_it = channel_readdone.begin();
 			if (done_it != channel_readdone.end() &&
-			    (!write_limit ||
-			     channel_writing.size() < write_limit)) {
+			    (!write_limit || channel_writing.size() < write_limit)) {
 				//try reap channel
 				auto nh = channel_readdone.extract(done_it++);
-				DBG_AIO(2,
-					"Channel switched to writing, idx = %" PRIi64
-					"\n",
-					nh.key());
-				auto ret =
-					channel_writing.insert(std::move(nh));
+				DBG_AIO(2, "Channel switched to writing, idx = %" PRIi64 "\n", nh.key());
+				auto ret = channel_writing.insert(std::move(nh));
 				assert(ret.inserted);
 				ret.position->second->prep_write(fd_out, sigw);
 				work = true;
@@ -417,14 +379,12 @@ struct AioCopyManager {
 		auto range = channel_free.equal_range(UINT64_MAX);
 		if (DBG_LEVEL_AIO > 0) {
 			DBG_AIO(1, "All Finished: Last Successful = ");
-			for (auto p = channel_free.begin(); p != range.first;
-			     ++p) {
+			for (auto p = channel_free.begin(); p != range.first; ++p) {
 				DBG_AIO(-1, "%" PRIi64 ", ", p->first);
 			}
 			DBG_AIO(-1, "Last Failed = ");
 			for (auto p = range.first; p != range.second; ++p) {
-				DBG_AIO(-1, "%" PRIi64 "/%" PRIi64 ", ",
-					p->second->idx, p->second->prev_idx);
+				DBG_AIO(-1, "%" PRIi64 "/%" PRIi64 ", ", p->second->idx, p->second->prev_idx);
 			}
 			DBG_AIO(-1, "\n");
 		}
@@ -432,12 +392,9 @@ struct AioCopyManager {
 		for (auto i = range.first; i != range.second; ++i) {
 			if (i->second->idx != UINT64_MAX) {
 				if (!last_success)
-					last_success.emplace(
-						i->second->prev_idx);
+					last_success.emplace(i->second->prev_idx);
 				else
-					last_success.emplace(
-						std::min(i->second->prev_idx,
-							 *last_success));
+					last_success.emplace(std::min(i->second->prev_idx, *last_success));
 			} else {
 				assert(i->second->prev_idx == UINT64_MAX);
 			}
@@ -449,8 +406,6 @@ struct AioCopyManager {
 		}
 
 		return std::make_pair(*last_success,
-				      count + channel_free.size() -
-					      std::distance(range.first,
-							    range.second));
+				      count + channel_free.size() - std::distance(range.first, range.second));
 	}
 };
