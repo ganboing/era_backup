@@ -2,7 +2,23 @@ Download rapidxml(sourceforge) into rapidxml
 
 Build: g++-9 -O3 -std=c++17 -g -Wall -I rapidxml/  -o run_backup run_backup.cpp -lrt -pthread
 
-Example 1: Bob has two Large identical Hard drives. The first one is setup with dm-era. Metadata is tracking era for every 4096 sectors. The second is used for block-level backup. On a daily basis, he may run
+Help:
+
+Usage:
+        run_backup [OPTIONS...] <in> <out> <blocksz(in 512b sectors)>
+
+        -h, --help     Display help message
+        -m, --format   Metadata format: era|plain
+        -d, --dry      Dry run
+        -s, --restart  Restart at N'th block
+        -c, --channel  Number of channels
+        -r, --rlimit   Limit the number of concurrent read channels
+        -w, --wlimit   Limit the number of concurrent write channels
+
+
+Example 1:
+
+Bob has two Large identical Hard drives. The first one is setup with dm-era. Metadata is tracking era for every 4096 sectors. The second is used for block-level backup. On a daily basis, he may run
 
 $ dmsetup message <era-drive> 0 take_metadata_snap
 $ dmsetup status  <era-drive>                         # check the status, second to last colum is the current era
