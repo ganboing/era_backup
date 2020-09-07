@@ -223,8 +223,8 @@ struct AioCopyManager {
 		for (auto &e : sigs_abort) {
 			sigaddset(&mask, e);
 		}
-		if (sigprocmask(SIG_BLOCK, &mask, &oldmask) < 0)
-			error(1, errno, "sigprocmask failed");
+		if (pthread_sigmask(SIG_BLOCK, &mask, &oldmask) < 0)
+			error(1, errno, "pthread_sigmask failed");
 
 		if ((sfd = signalfd(-1, &mask, SFD_CLOEXEC)) < 0)
 			error(1, errno, "signalfd failed");
@@ -249,7 +249,7 @@ struct AioCopyManager {
 	inline ~AioCopyManager()
 	{
 		close(sfd);
-		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+		pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
 	}
 
 	void complete_channel(AioChannel *chan)
