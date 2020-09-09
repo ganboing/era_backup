@@ -7,13 +7,16 @@ Help:
 Usage:
         run_backup [OPTIONS...] <in> <out> <blocksz(in 512b sectors)>
 
-        -h, --help     Display help message
-        -m, --format   Metadata format: era|plain
-        -d, --dry      Dry run
-        -s, --restart  Restart at N'th block
-        -c, --channel  Number of channels
-        -r, --rlimit   Limit the number of concurrent read channels
-        -w, --wlimit   Limit the number of concurrent write channels
+        -h, --help      Display help message
+        -m, --format    Metadata format: era|plain
+        -d, --dry       Dry run
+        -s, --restart   Restart at N'th block
+        -p, --progress  Report progress
+        -c, --channel   Number of channels
+        -C, --chunk     Max contiguous blocks to read/write
+        -D, --discard   Granularity of FALLOC_FL_PUNCH_HOLE (in 512b sectors)
+        -r, --rlimit    Limit the number of concurrent read channels
+        -w, --wlimit    Limit the number of concurrent write channels
 
 Logging:
         DEBUG_AIO=<n>
