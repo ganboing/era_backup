@@ -29,6 +29,20 @@ $ fsfreeze -f <mount-point for era-drive>
 $ dmsetup message <era-drive> 0 take_metadata_snap
 $ dmsetup status  <era-drive>                         # check the status, second to last colum is the current era
 $ era_invalidate --written-since <previous-era> /dev/mapper/<era-drive> | \
-    ./run_backup -m era -c 2 -r 1 /dev/mapper/<era-drive> /dev/<backup-drive> 4096
+    ./run_backup -m era -c 4 -r 1 /dev/mapper/<era-drive> /dev/<backup-drive> 4096
+                                                      # -r 1 limits concurrent pread syscall to 1, which is good enough for hard drive
+                                                      # -c 4 gives 4 copiers in total
 $ dmsetup message <era-drive> 0 drop_metadata_snap
 $ fsfreeze -u <mount-point for era-drive>
+
+Example 2:
+
+Alice has two Large Hard drives. The first one is setup with dm-era. Metadata is tracking era for every 4096 sectors. The second holds a image file used for block-level backup for the first one, and is formatted with ext4 with logical block size 4K. To save space on the second drive, on a daily basis, she may run
+
+$ fsfreeze -f ...
+$ dmsetup message ...
+$ dmsetup status  ...
+$ era_invalidate ... | \
+    ./run_backup -m era -c 4 -r 1 -D 8 /dev/mapper/<era-drive> /stor/backup.img 4096  # backup.img will be kept sparse
+$ dmsetup message ...
+$ fsfreeze -u ...
